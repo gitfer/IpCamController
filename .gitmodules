@@ -1,0 +1,3 @@
+[submodule "nodejs-foscam"]
+	path = nodejs-foscam
+	url = https://github.com/fvdm/nodejs-foscam.git
