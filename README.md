@@ -1,4 +1,7 @@
-# Nodejs Foscam controller
+IpCamController
+===============
+
+A nodejs command line controller for Foscam ipcameras
 
 ## Ipcamera script based on [commander](https://github.com/visionmedia/commander.js) and [nodejs-foscam](https://github.com/fvdm/nodejs-foscam)
 
