@@ -17,6 +17,7 @@ After checking out nodejs-foscam git submodule, install commander:
 ### Usage
 
 1. Create a 'config.json' file just like the following:
+
   ```sh
   {
     "host": "hostname",
