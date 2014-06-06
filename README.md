@@ -28,5 +28,7 @@ After checking out nodejs-foscam git submodule, install commander:
   ```
 2. In order to show the available options, run:
 
+	```sh
   	node ipcamera-controller.js -h
+  	```
 
