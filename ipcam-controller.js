@@ -1,15 +1,23 @@
 var config = require('./config.json');
 var cam = require('foscam');
-var videoshow = require('videoshow')
+var videoshow = require('videoshow');
+var cloudinary = require('cloudinary');
+
+cloudinary.config({ 
+  cloud_name: config.cloudinary_cloud_name, 
+  api_key: config.cloudinary_api_key, 
+  api_secret: config.cloudinary_api_secret
+});
+
 
 function setupCam () {
   console.log('cam', cam);
     cam.setup(
         {
-            host: '192.168.1.45',
-            port: 80,
-            user: 'admin',
-            pass: ''
+            host: config.host,
+            port: config.port,
+            user: config.user,
+            pass: config.pass
         },
         function( status ) {
             if( !status ) {
@@ -49,7 +57,6 @@ const rotate = (direction, degrees, cam) => {
     });  
 }
 
-
 function init(){
     console.log('init');
 
@@ -68,7 +75,6 @@ function init(){
 
     cam.control.camera('resolution', 640, function () {
       console.log ('Resolution changed to 640x480');
-      /*center();*/
     });
 
     const convert = () => {
@@ -105,8 +111,13 @@ videoshow(images, videoOptions)
   })
   .on('end', function (output) {
     console.error('Video created in:', output);
-    process.exit();
-  })
+    cloudinary.v2.uploader.upload(output, 
+        { resource_type: "video" },
+        function(error, result) { console.log(result); });
+
+    
+
+    });
 };
     const execute = function() {
             let millisBetweenPacks = 18000;
