@@ -5,6 +5,8 @@ A nodejs command line controller for Foscam ipcameras
 
 Ipcamera script based on [commander](https://github.com/visionmedia/commander.js) and [nodejs-foscam](https://github.com/fvdm/nodejs-foscam)
 
+My current camera is FI8918W.
+
 ### Dependencies
 
 The installation and loading are simple with [NPM](https://npmjs.org/).
