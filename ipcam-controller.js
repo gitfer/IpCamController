@@ -1,14 +1,15 @@
 var config = require('./config.json');
-var cam = require('./nodejs-foscam');
-var program = require('commander');
+var cam = require('foscam');
+var videoshow = require('videoshow')
 
 function setupCam () {
+  console.log('cam', cam);
     cam.setup(
         {
-            host: config.host,
-            port: config.port,
-            user: config.username,
-            pass: config.password
+            host: '192.168.1.45',
+            port: 80,
+            user: 'admin',
+            pass: ''
         },
         function( status ) {
             if( !status ) {
@@ -18,41 +19,24 @@ function setupCam () {
             }
         }
     );
+
+    cam.control.camera('resolution', 640, function () {
+      console.log ('Resolution changed to 640x480');
+    });
 }
 
-function init(commandName){
-    return function(val) {
-        setupCam();
-      var commandSanitized = commandName.replace(new RegExp('-', 'g'), ' ');
-        if(val !== undefined){
-            console.log('Setting preset \'' + commandSanitized + '\' to value: ' + val);
-            cam.preset[commandSanitized](val);
-            return;
-        }
-        cam.control.decoder(commandSanitized, function() {
-            console.log('Executing ' + commandSanitized);
-        });  
-    };
-}
+const takePicture = (index) => {
+  cam.snapshot ('./pictures/save_' + index + '.jpg', console.log);
+};
 
-function rotateLeft(degrees) {
-    rotate('left', degrees);
-}
+const center = () => {
+  console.log('Start center');
+  cam.control.decoder('center', function() {
+      console.log('End center');
+  });  
+};
 
-function rotateRight(degrees) {
-    rotate('right', degrees);
-}
-
-function rotateUp(degrees) {
-    rotate('up', degrees);
-}
-
-function rotateDown(degrees) {
-    rotate('down', degrees);
-}
-
-function rotate(direction, degrees) {
-    setupCam();
+const rotate = (direction, degrees, cam) => {
     var secondsToWait = (degrees * 19)/270;
     cam.control.decoder(direction, function() {
         console.log('Direction: ' + direction + '. Executing rotation by ' + degrees + ' degrees');
@@ -65,22 +49,87 @@ function rotate(direction, degrees) {
     });  
 }
 
-program
-  .version('0.0.1')
-  .option('-C, --center', 'Center cam', init('center'))
-  .option('-L, --left', 'Move left completely', init('right'))
-  .option('-R, --right', 'Move right completely', init('left'))
-  .option('-U, --up', 'Move up completely', init('up'))
-  .option('-D, --down', 'Move up completely', init('down'))
-  .option('-l, --left-step [degrees]', 'Move left few degrees', rotateRight, 45)
-  .option('-r, --right-step [degrees]', 'Move right few degrees', rotateLeft, 45)
-  .option('-u, --up-step [degrees]', 'Move up few degrees', rotateUp, 45)
-  .option('-d, --down-step [degrees]', 'Move down few degrees', rotateDown, 45)
-  .option('-i, --infrared-on', 'IR on', init('io-output-low'))
-  .option('-o, --infrared-off', 'IR off', init('io-output-high'))
-  .option('-s, --set [pos]', 'Set pos (1-16)', init('set'), 1)
-  .option('-g, --go [pos]', 'Go to pos (1-16)', init('go'), 1)
-  .option('-p, --patrol', 'Start horizontal patrol', init('horizontal-patrol'))
-  .option('-ps, --patrol-stop', 'Stop horizontal patrol', init('stop-horizontal-patrol'))
-  .option('-?, --info-cam', 'Log cam', function(){ console.log(cam); })
-  .parse(process.argv);
+
+function init(){
+    console.log('init');
+
+    let secondsToWait = 4;
+    let degrees = 20;
+    let directions = ['right', 'right', 'left', 'left' ];
+    let nextIndex = 0;
+
+    cam.setup(
+    {
+        host: '192.168.1.45',
+        port: 80,
+        user: 'admin',
+        pass: ''
+    });
+
+    cam.control.camera('resolution', 640, function () {
+      console.log ('Resolution changed to 640x480');
+      /*center();*/
+    });
+
+    const convert = () => {
+      var images = [
+  './pictures/save_1.jpg',
+  './pictures/save_2.jpg',
+  './pictures/save_3.jpg',
+  './pictures/save_4.jpg',
+  './pictures/save_5.jpg',
+  './pictures/save_6.jpg',
+  './pictures/save_7.jpg'
+]
+
+var videoOptions = {
+  fps: 20,
+  loop: 5, // seconds
+  transition: false,
+  transitionDuration: 0, // seconds
+  videoBitrate: 1024,
+  videoCodec: 'libx264',
+  size: '640x?',
+  format: 'mp4',
+  pixelFormat: 'yuv420p'
+}
+
+videoshow(images, videoOptions)
+  .save('./videos/video.mp4')
+  .on('start', function (command) {
+    console.log('ffmpeg process started:', command)
+  })
+  .on('error', function (err, stdout, stderr) {
+    console.error('Error:', err)
+    console.error('ffmpeg stderr:', stderr)
+  })
+  .on('end', function (output) {
+    console.error('Video created in:', output);
+    process.exit();
+  })
+};
+    const execute = function() {
+            let millisBetweenPacks = 18000;
+            let millisBetweenPics = 1000;
+            const NUMBER_OF_PICS = 10;
+            const fixedPictureInterval = setInterval(function() {
+              nextIndex = nextIndex + 1;
+              takePicture(nextIndex);
+              setTimeout(function () {
+              if(nextIndex >= NUMBER_OF_PICS){
+                clearInterval(fixedPictureInterval);
+                console.log('Ended pack');
+                convert();
+                nextIndex = 0;
+                setTimeout(function () {
+                  console.log('Restarting...');
+                  execute();
+                }, millisBetweenPacks)
+              }
+              }, millisBetweenPics + 200)
+            }, millisBetweenPics);
+
+    };
+    execute();
+}
+init();

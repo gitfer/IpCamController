@@ -4,11 +4,13 @@
   "description": "Foscam cam controller",
   "main": "ipcam-controller.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "rm ./pictures/* && rm videos/* && node ipcam-controller.js && vlc videos/video.mp4"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "commander": "^2.2.0"
+    "commander": "^2.2.0",
+    "foscam": "^0.2.2",
+    "videoshow": "^0.1.11"
   }
 }
